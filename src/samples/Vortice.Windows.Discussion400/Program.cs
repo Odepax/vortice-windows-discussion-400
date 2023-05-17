@@ -20,19 +20,19 @@ public static class Program
     {
         private readonly ID2D1Factory1 _d2dFactory;
         private ID2D1HwndRenderTarget _renderTarget;
+        private ID2D1DeviceContext _deviceContext;
 
         private Vortice.Mathematics.Color4 bgcolor = new(0.1f, 0.1f, 0.1f, 1.0f);
         private ID2D1SolidColorBrush redBrush;
         private ID2D1SolidColorBrush greenBrush;
         private ID2D1BitmapRenderTarget OffscreenBuffer;
-
-        // Effect<TextHightlightShader> TextHightlightShader;
-        // public GameContent() => TextHightlightShader = new(context => new(context)) { Inputs = new[] { () => OffscreenBuffer.Resource.Bitmap } };
+        private TextHightlightShader TextHightlightShader;
 
         public TestApplication()
             : base(false)
         {
             _d2dFactory = D2D1CreateFactory<ID2D1Factory1>();
+            TextHightlightShader.Register(_d2dFactory);
 
             CreateResources();
         }
@@ -42,17 +42,21 @@ public static class Program
             if (redBrush != null) { redBrush.Dispose(); }
             if (greenBrush != null) { greenBrush.Dispose(); }
             if (OffscreenBuffer != null) { OffscreenBuffer.Dispose(); }
+            if (TextHightlightShader != null) { TextHightlightShader.Dispose(); }
 
+            _deviceContext.Dispose();
             _renderTarget.Dispose();
             _d2dFactory.Dispose();
         }
 
         private void CreateResources()
         {
+            if (_deviceContext != null) { _deviceContext.Dispose(); }
             if (_renderTarget != null) { _renderTarget.Dispose(); }
             if (redBrush != null) { redBrush.Dispose(); }
             if (greenBrush != null) { greenBrush.Dispose(); }
             if (OffscreenBuffer != null) { OffscreenBuffer.Dispose(); }
+            if (TextHightlightShader != null) { TextHightlightShader.Dispose(); }
 
             HwndRenderTargetProperties wtp = new();
             wtp.Hwnd = MainWindow!.Handle;
@@ -61,6 +65,7 @@ public static class Program
             _renderTarget = _d2dFactory.CreateHwndRenderTarget(
                 new RenderTargetProperties(),
                 wtp);
+            _deviceContext = _renderTarget.QueryInterface<ID2D1DeviceContext>();
 
             redBrush = _renderTarget.CreateSolidColorBrush(Colors.Red);
             greenBrush = _renderTarget.CreateSolidColorBrush(Colors.Green);
@@ -70,6 +75,8 @@ public static class Program
                 desiredFormat: _renderTarget.PixelFormat,
                 options: CompatibleRenderTargetOptions.None
             );
+            TextHightlightShader = new(_deviceContext);
+            TextHightlightShader.SetInput(0, OffscreenBuffer.Bitmap, invalidate: true);
         }
 
         protected override void InitializeBeforeRun()
@@ -92,7 +99,7 @@ public static class Program
             OffscreenBuffer.FillRectangle(new RectangleF(0, 0, 64, 64), greenBrush);
             OffscreenBuffer.EndDraw();
 
-			_renderTarget.DrawBitmap(
+            _renderTarget.DrawBitmap(
                 bitmap: OffscreenBuffer.Bitmap,
                 opacity: 1,
                 interpolationMode: BitmapInterpolationMode.Linear,
@@ -100,14 +107,14 @@ public static class Program
                 destinationRectangle: new RectangleF(8 + 64 + 8, 8, 64, 64)
             );
 
-			// _renderTarget.DrawImage(
-			//     image: TextHightlightShader.Resource.Output,
-			//     compositeMode: CompositeMode.SourceOver,
-			//     interpolationMode: InterpolationMode.NearestNeighbor,
-			//     targetOffset: new Vector2(Font_ttf.MeasureWidth(text) + 8 - 8, lineIndex * lineHeight - 8)
-			// );
+            _deviceContext.DrawImage(
+                image: TextHightlightShader.Output,
+                compositeMode: CompositeMode.SourceOver,
+                interpolationMode: InterpolationMode.NearestNeighbor,
+                targetOffset: new Vector2(8 + 64 + 8 + 64 + 8, 8)
+            );
 
-			try
+            try
             {
                 _renderTarget.EndDraw();
             }
