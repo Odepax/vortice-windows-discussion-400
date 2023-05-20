@@ -1,6 +1,7 @@
 // Copyright © Amer Koleci and Contributors.
 // Licensed under the MIT License (MIT). See LICENSE in the repository root for more information.
 
+using System;
 using System.Drawing;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -76,7 +77,8 @@ public static class Program
                 options: CompatibleRenderTargetOptions.None
             );
             TextHightlightShader = new(_deviceContext);
-            TextHightlightShader.SetInput(0, OffscreenBuffer.Bitmap, invalidate: true);
+            TextHightlightShader.SetInput(0, OffscreenBuffer.Bitmap, invalidate: true); // 'Dis useless actually: the shader doesn't use its input.
+                                                                                        // But hey, one step at a time, right?
         }
 
         protected override void InitializeBeforeRun()
@@ -89,17 +91,20 @@ public static class Program
 
         protected override void OnDraw(int width, int height)
         {
+            GC.Collect();                                                            // Forcing garbage collection is essential to reproduce the bug.
+                                                                                     // The sample doesn't trigger garbage collection in a timely manner otherwise...
+
             _renderTarget.BeginDraw();
             _renderTarget.Clear(bgcolor);
 
-            _renderTarget.FillRectangle(new RectangleF(8, 8, 64, 64), redBrush);
+            _renderTarget.FillRectangle(new RectangleF(8, 8, 64, 64), redBrush);     // The red rectangle is a normal draw.
 
             OffscreenBuffer.BeginDraw();
             OffscreenBuffer.Clear(Colors.Transparent);
-            OffscreenBuffer.FillRectangle(new RectangleF(0, 0, 64, 64), greenBrush);
+            OffscreenBuffer.FillRectangle(new RectangleF(0, 0, 64, 64), greenBrush); // The green rectangle is a draw from an offscreen canvas.
             OffscreenBuffer.EndDraw();
 
-            _renderTarget.DrawBitmap(
+            _renderTarget.DrawBitmap(                                                // The green rectangle is a draw from an offscreen canvas.
                 bitmap: OffscreenBuffer.Bitmap,
                 opacity: 1,
                 interpolationMode: BitmapInterpolationMode.Linear,
@@ -107,18 +112,14 @@ public static class Program
                 destinationRectangle: new RectangleF(8 + 64 + 8, 8, 64, 64)
             );
 
-            _deviceContext.DrawImage(
+            _deviceContext.DrawImage(                                                // The blue rectangle is a draw from the shader.
                 image: TextHightlightShader.Output,
                 compositeMode: CompositeMode.SourceOver,
                 interpolationMode: InterpolationMode.NearestNeighbor,
                 targetOffset: new Vector2(8 + 64 + 8 + 64 + 8, 8)
             );
 
-            try
-            {
-                _renderTarget.EndDraw();
-            }
-            catch
+            if (_renderTarget.EndDraw() == Vortice.Direct2D1.ResultCode.RecreateTarget)
             {
                 CreateResources();
             }
