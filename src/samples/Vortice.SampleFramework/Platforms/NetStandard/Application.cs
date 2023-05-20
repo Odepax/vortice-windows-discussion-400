@@ -34,8 +34,8 @@ public abstract partial class Application : IDisposable
                 cbSize = (uint)Unsafe.SizeOf<WNDCLASSEXW>(),
                 style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC,
                 lpfnWndProc = &WndProc,
-                hInstance = (HINSTANCE)hInstance.DangerousGetHandle(),
-                hCursor = LoadCursor((HINSTANCE)IntPtr.Zero, szCursorName),
+                hInstance = (HMODULE)hInstance.DangerousGetHandle(),
+                hCursor = LoadCursor((HMODULE)IntPtr.Zero, szCursorName),
                 hbrBackground = (win32.Graphics.Gdi.HBRUSH)IntPtr.Zero,
                 hIcon = (HICON)IntPtr.Zero,
                 lpszClassName = lpszClassName

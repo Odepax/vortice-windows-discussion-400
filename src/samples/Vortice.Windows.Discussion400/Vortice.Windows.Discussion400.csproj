@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Vortice.Direct2D1" Version="2.4.2" />
-		<PackageReference Include="Vortice.D3DCompiler" Version="2.4.2"/>
+    <PackageReference Include="Vortice.Direct2D1" Version="3.2.0" />
+		<PackageReference Include="Vortice.D3DCompiler" Version="3.2.0"/>
     <ProjectReference Include="..\Vortice.SampleFramework\Vortice.SampleFramework.csproj" />
   </ItemGroup>
 
